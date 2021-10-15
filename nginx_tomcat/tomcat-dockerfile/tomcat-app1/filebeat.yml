@@ -1,0 +1,19 @@
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /apps/tomcat/logs/catalina.out
+  fields:
+    type: tomcat-catalina
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+setup.template.settings:
+  index.number_of_shards: 1
+setup.kibana:
+output.redis:
+  hosts: ["172.31.2.105:6379"]
+  key: "k8s-magedu-app1"
+  db: 1
+  timeout: 5
+  password: "123456"
