@@ -1,0 +1,84 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    app: web-nginx-deployment-label
+  name: web-nginx-deployment
+  namespace: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-nginx-selector
+  template:
+    metadata:
+      labels:
+        app: web-nginx-selector
+    spec:
+      containers:
+      - name: web-nginx-container
+        image: hub.zhangguiyuan.com/v1/nginx-web1:v3
+        #command: ["/apps/tomcat/bin/run_tomcat.sh"]
+        #imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          protocol: TCP
+          name: http
+        - containerPort: 443
+          protocol: TCP
+          name: https
+        env:
+        - name: "password"
+          value: "123456"
+        - name: "age"
+          value: "20"
+        resources:
+          limits:
+            cpu: 2
+            memory: 2Gi
+          requests:
+            cpu: 500m
+            memory: 1Gi
+
+        volumeMounts:
+        - name: web-images
+          mountPath: /usr/local/nginx/html/webapp/images
+          readOnly: false
+        - name: web-static
+          mountPath: /usr/local/nginx/html/webapp/static
+          readOnly: false
+      volumes:
+      - name: web-images
+        nfs:
+          server: 10.0.0.103
+          path: /data/k8sdata/web/images 
+      - name: web-static
+        nfs:
+          server: 10.0.0.103
+          path: /data/k8sdata/web/static
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    app: web-nginx-service-label
+  name: web-nginx-service
+  namespace: web
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+    nodePort: 20002
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 443
+    nodePort: 20443
+  selector:
+    app: web-nginx-selector

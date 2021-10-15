@@ -1,0 +1,74 @@
+kind: Deployment
+#apiVersion: extensions/v1beta1
+apiVersion: apps/v1
+metadata:
+  labels:
+    app: web-tomcat-app1-deployment-label
+  name: web-tomcat-app1-deployment
+  namespace: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-tomcat-app1-selector
+  template:
+    metadata:
+      labels:
+        app: web-tomcat-app1-selector
+    spec:
+      containers:
+      - name: web-tomcat-app1-container
+        image: hub.zhangguiyuan.com/v1/tomcat-app1:v1
+        #command: ["/apps/tomcat/bin/run_tomcat.sh"]
+        #imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+          name: http
+        env:
+        - name: "password"
+          value: "123456"
+        - name: "age"
+          value: "18"
+        resources:
+          limits:
+            cpu: 1
+            memory: "512Mi"
+          requests:
+            cpu: 500m
+            memory: "512Mi"
+        volumeMounts:
+        - name: web-images
+          mountPath: /usr/local/nginx/html/webapp/images
+          readOnly: false
+        - name: web-static
+          mountPath: /usr/local/nginx/html/webapp/static
+          readOnly: false
+      volumes:
+      - name: web-images
+        nfs:
+          server: 10.0.0.103
+          path: /data/k8sdata/web/images
+      - name: web-static
+        nfs:
+          server: 10.0.0.103
+          path: /data/k8sdata/web/static
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    app: web-tomcat-app1-service-label
+  name: web-tomcat-app1-service
+  namespace: web
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+    nodePort: 28080
+  selector:
+    app: web-tomcat-app1-selector
